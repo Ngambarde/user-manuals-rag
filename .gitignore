@@ -1,0 +1,17 @@
+# Environments
+.env
+.venv
+venv/
+env/
+__pycache__/
+
+# Vector Store
+vector_store/
+
+# Data
+data/
+documents/
+
+# IDE
+.idea/
+.vscode/ 
