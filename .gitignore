@@ -9,7 +9,6 @@ __pycache__/
 vector_store/
 
 # Data
-data/
 documents/
 
 # IDE
