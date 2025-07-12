@@ -1,6 +1,9 @@
-# Company RAG Project
+# This project is currently under developement, but please feel free to take a look!
+## Some features may not work optimally and will be improved
 
-This project is a Retrieval-Augmented Generation (RAG) system to assist in troubleshooting, setup, and information retrieval for our current equipment
+# Equipment RAG Project
+
+This project is a Retrieval-Augmented Generation (RAG) system to assist in troubleshooting, setup, and information retrieval for equipment based on user manuals and work instructions.
 
 ## Setup
 
@@ -16,8 +19,14 @@ This project is a Retrieval-Augmented Generation (RAG) system to assist in troub
 
 ## Usage
 
-To run the application, execute the main script:
+To ingest documents, execute the document ingestion script:
 
 ```bash
-python src/main.py
-``` 
+python src/ingest.py
+```
+
+To query the model, modify the `my_query` field and execute the query script:
+
+```bash
+python src/query.py
+```
