@@ -1,23 +1,32 @@
-from langchain_community.document_loaders import UnstructuredPDFLoader
+from langchain_unstructured import UnstructuredLoader
 from typing import List
+import os
 
-def parse_pdf_elements(file_path: str) -> List:
+def parse_pdf_elements(file_paths: List[str]) -> List:
     """
-    Parses a PDF document using UnstructuredPDFLoader to extract its
+    Parses a batch of PDF documents using UnstructuredLoader to extract their
     constituent elements (tables, text, titles, etc.).
 
     Args:
-        file_path: The path to the PDF file.
+        file_paths: A list of paths to the PDF files.
 
     Returns:
-        A list of 'Document' objects, where each object represents
-        a structural element from the PDF.
+        A list of 'Document' objects from all parsed PDFs.
     """
-    print(f"--- Parsing {file_path} ---")
+    if not isinstance(file_paths, list):
+        raise TypeError("file_paths must be a list of strings.")
+
+    print(f"--- Parsing {len(file_paths)} PDF file(s) in a batch ---")
     
-    # Use Unstructured to get the elements and their coordinates
-    # mode="elements" give fine grained control and metadata like coordinates
-    loader = UnstructuredPDFLoader(file_path, mode="elements")
-    elements = loader.load()
+    loader = UnstructuredLoader(
+        file_path=file_paths, 
+        strategy="hi_res",
+        infer_table_structure=True,
+    )
+
+    print("Loading models and parsing documents...")
+    elements = []
+    for element in loader.lazy_load():
+        elements.append(element)
     
     return elements
