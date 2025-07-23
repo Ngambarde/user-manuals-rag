@@ -1,1 +1,3 @@
-pytest "fastapi[all]" httpx
+pytest 
+fastapi[all] 
+httpx
