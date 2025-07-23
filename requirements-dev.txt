@@ -1,3 +1,5 @@
 pytest 
 fastapi[all] 
 httpx
+flake8
+black
