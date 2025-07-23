@@ -245,8 +245,8 @@ class TestBackwardCompatibility:
         with patch.object(RAGSystem, "_initialize_components"):
             rag_system = RAGSystem(config)
 
-            # Mock FAISS loading to avoid actual loading
-            with patch(
+            # Mock path existence check and FAISS loading to avoid actual loading
+            with patch("os.path.exists", return_value=True) as mock_exists, patch(
                 "langchain_community.vectorstores.FAISS.load_local"
             ) as mock_load:
                 mock_db = MagicMock()
@@ -255,6 +255,11 @@ class TestBackwardCompatibility:
 
                 rag_system.embeddings = MagicMock()
                 rag_system._load_vector_store()
+                
+                # Verify path existence was checked
+                mock_exists.assert_called_once_with(config.db_path)
+                
+                # Verify FAISS loading was called correctly
                 mock_load.assert_called_once_with(
                     config.db_path,
                     rag_system.embeddings,
