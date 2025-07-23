@@ -130,13 +130,13 @@ def test_client(mock_rag_system: MagicMock) -> TestClient:
     Create a test client with mocked RAG system using dependency override
     """
     from src.main import app, get_rag_system
-    
+
     # Override the dependency with our mock
     app.dependency_overrides[get_rag_system] = lambda: mock_rag_system
-    
+
     with TestClient(app) as client:
         yield client
-    
+
     # Clean up dependency override
     app.dependency_overrides.clear()
 
@@ -158,11 +158,11 @@ def assert_stats_structure(stats: Dict[str, Any]):
     """
     if stats is None:
         return
-    
+
     expected_fields = ["query", "processing_time", "documents_retrieved", "success"]
     for field in expected_fields:
         assert field in stats, f"Missing field: {field}"
-    
+
     assert isinstance(stats["success"], bool)
     assert isinstance(stats["processing_time"], (int, float))
     assert isinstance(stats["documents_retrieved"], int)

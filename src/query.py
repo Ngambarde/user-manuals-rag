@@ -39,7 +39,8 @@ def run_query(query):
 
     for doc in response["context"]:
         print(
-            f"source: {doc.metadata.get('source', 'N/A')}, Page: {doc.metadata.get('page', 'N/A')}"
+            f"source: {doc.metadata.get('source', 'N/A')}, "
+            f"Page: {doc.metadata.get('page', 'N/A')}"
         )
 
 

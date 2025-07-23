@@ -1,9 +1,7 @@
-import pytest
 import logging
-import time
 import sys
 import os
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from unittest.mock import MagicMock
 from fastapi.testclient import TestClient
 
@@ -50,7 +48,9 @@ class TestLegacyFunctionality:
             """
             # Additional validation for empty text
             if not request.text.strip():
-                raise HTTPException(status_code=400, detail="Query text cannot be empty")
+                raise HTTPException(
+                    status_code=400, detail="Query text cannot be empty"
+                )
 
             try:
                 response_data = mock_rag_system.get_rag_response(request.text)
@@ -88,7 +88,9 @@ class TestLegacyFunctionality:
     def test_legacy_error_handling_edge_cases(self, test_client: TestClient):
         """Test edge cases in error handling"""
         # Test with malformed JSON
-        response = test_client.post("/query", data="not json", headers={"Content-Type": "application/json"})
+        response = test_client.post(
+            "/query", data="not json", headers={"Content-Type": "application/json"}
+        )
         assert response.status_code == 422
 
         # Test with missing Content-Type header - FastAPI accepts this as JSON
@@ -96,7 +98,9 @@ class TestLegacyFunctionality:
         assert response.status_code == 200  # FastAPI auto-detects JSON
 
         # Test with extra fields (should be ignored by Pydantic)
-        response = test_client.post("/query", json={"text": "test", "extra_field": "value"})
+        response = test_client.post(
+            "/query", json={"text": "test", "extra_field": "value"}
+        )
         assert response.status_code == 200
 
 
@@ -122,6 +126,7 @@ def assert_response_structure(response_data: Dict[str, Any]):
     Legacy response structure assertion - now in conftest.py
     """
     from conftest import assert_response_structure as new_assert
+
     return new_assert(response_data)
 
 
@@ -130,4 +135,5 @@ def assert_stats_structure(stats: Dict[str, Any]):
     Legacy stats structure assertion - now in conftest.py
     """
     from conftest import assert_stats_structure as new_assert
+
     return new_assert(stats)

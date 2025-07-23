@@ -103,14 +103,18 @@ class RAGSystem:
             raise ValueError("GCP_PROJECT_ID environment variable is required")
 
         # Determine vector store configuration
-        use_gcs = os.getenv("USE_GCS_VECTOR_STORE", "False").lower() in ("true", "1", "yes")
+        use_gcs = os.getenv("USE_GCS_VECTOR_STORE", "False").lower() in (
+            "true",
+            "1",
+            "yes",
+        )
         vector_store_bucket = os.getenv("VECTOR_STORE_BUCKET")
-        
+
         # If GCS is enabled but no bucket specified, construct from project ID
         if use_gcs and not vector_store_bucket:
             vector_store_bucket = f"{project_id}-vector-stores"
             logger.info(f"Using default vector store bucket: {vector_store_bucket}")
-        
+
         return RAGConfig(
             project_id=project_id,
             db_path=os.getenv("DB_FAISS_PATH", "vector_store"),
@@ -169,15 +173,22 @@ class RAGSystem:
         """
         Load FAISS vector store with validation
         """
-        if not os.path.exists(self.config.db_path) and not self.config.use_gcs_vector_store:
+        if (
+            not os.path.exists(self.config.db_path)
+            and not self.config.use_gcs_vector_store
+        ):
             raise RAGError(f"Vector store path does not exist: {self.config.db_path}")
 
         try:
             if self.config.use_gcs_vector_store:
-                logger.info(f"Loading FAISS database from GCS bucket: {self.config.vector_store_bucket}")
+                logger.info(
+                    f"Loading FAISS database from GCS bucket: "
+                    f"{self.config.vector_store_bucket}"
+                )
                 self.db = self._load_vector_store_from_gcs()
                 logger.info(
-                    f"Vector store loaded successfully from GCS with {self.db.index.ntotal} vectors"
+                    f"Vector store loaded successfully from GCS with "
+                    f"{self.db.index.ntotal} vectors"
                 )
             else:
                 self.db = FAISS.load_local(
@@ -186,7 +197,8 @@ class RAGSystem:
                     allow_dangerous_deserialization=True,
                 )
                 logger.info(
-                    f"Vector store loaded successfully with {self.db.index.ntotal} vectors"
+                    f"Vector store loaded successfully with "
+                    f"{self.db.index.ntotal} vectors"
                 )
         except Exception as e:
             logger.error(f"Failed to load vector store: {e}")
@@ -199,7 +211,6 @@ class RAGSystem:
         import tempfile
         import shutil
         from google.cloud import storage
-        from google.api_core import retry
 
         if not self.config.vector_store_bucket:
             raise RAGError("Vector store bucket not configured for GCS loading")
@@ -210,16 +221,16 @@ class RAGSystem:
             # Download from GCS with project specification
             storage_client = storage.Client(project=self.config.project_id)
             bucket = storage_client.bucket(self.config.vector_store_bucket)
-            
+
             # Download the FAISS index files
             faiss_files = ["index.faiss", "index.pkl"]
             for filename in faiss_files:
                 blob_name = f"{self.config.vector_store_blob}/{filename}"
                 blob = bucket.blob(blob_name)
-                
+
                 if not blob.exists():
                     raise RAGError(f"FAISS file not found in GCS: {blob_name}")
-                
+
                 local_path = os.path.join(temp_dir, filename)
                 logger.info(f"Downloading {blob_name} from GCS")
                 blob.download_to_filename(local_path)
@@ -230,9 +241,9 @@ class RAGSystem:
                 self.embeddings,
                 allow_dangerous_deserialization=True,
             )
-            
+
             return db
-            
+
         except Exception as e:
             logger.error(f"Failed to load vector store from GCS: {e}")
             raise RAGError(f"GCS vector store loading failed: {e}")
@@ -249,8 +260,8 @@ class RAGSystem:
         try:
             prompt = ChatPromptTemplate.from_template(
                 """Answer the following question based only on the provided context.
-                If the context doesn't contain enough information to answer the question,
-                say "I don't have enough information to answer this question."
+                If the context doesn't contain enough information to answer the
+                question, say "I don't have enough information to answer this question."
 
                 <context>
                 {context}
