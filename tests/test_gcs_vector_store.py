@@ -255,10 +255,10 @@ class TestBackwardCompatibility:
 
                 rag_system.embeddings = MagicMock()
                 rag_system._load_vector_store()
-                
+
                 # Verify path existence was checked
                 mock_exists.assert_called_once_with(config.db_path)
-                
+
                 # Verify FAISS loading was called correctly
                 mock_load.assert_called_once_with(
                     config.db_path,
