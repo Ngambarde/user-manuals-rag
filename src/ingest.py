@@ -250,7 +250,8 @@ class DocumentIngestionPipeline:
                 stats["processing_time"] = time.time() - start_time
 
                 logger.info(
-                    f"Ingestion completed successfully in {stats['processing_time']:.2f} seconds"
+                    f"Ingestion completed successfully in"
+                    f"{stats['processing_time']:.2f} seconds"
                 )
                 return stats
 
