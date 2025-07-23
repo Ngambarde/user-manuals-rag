@@ -55,6 +55,7 @@ jobs:
         with:
           # This is now filled with your correct project details
           workload_identity_provider: 'projects/508052440393/locations/global/workloadIdentityPools/github-pool/providers/github-actions-provider-v2'
+          audience: 'https://github.com/Ngambarde/user-manuals-rag'
           service_account: 'github-actions-sa@rag-project-v3.iam.gserviceaccount.com'
 
       - name: Set up Docker Buildx
