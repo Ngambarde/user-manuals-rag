@@ -7,9 +7,12 @@ from langchain_core.prompts import ChatPromptTemplate
 
 DB_FAISS_PATH = "vector_store/"
 
+
 def run_query(query):
     embeddings = OpenAIEmbeddings()
-    db = FAISS.load_local(DB_FAISS_PATH, embeddings, allow_dangerous_deserialization=True)
+    db = FAISS.load_local(
+        DB_FAISS_PATH, embeddings, allow_dangerous_deserialization=True
+    )
 
     llm = ChatOpenAI(model="gpt-4.1-nano-2025-04-14")
     print(f"LLM loaded: {llm}")
@@ -22,7 +25,6 @@ def run_query(query):
         <context>
         {context}
         </context>
-        
         Question: {input}"""
     )
 
@@ -36,7 +38,10 @@ def run_query(query):
     print("\n --- Source Documents ---")
 
     for doc in response["context"]:
-        print(f"source: {doc.metadata.get('source', 'N/A')}, Page: {doc.metadata.get('page', 'N/A')}")
+        print(
+            f"source: {doc.metadata.get('source', 'N/A')}, Page: {doc.metadata.get('page', 'N/A')}"
+        )
+
 
 if __name__ == "__main__":
     load_dotenv()

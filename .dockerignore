@@ -16,5 +16,8 @@ __pycache__/
 documents/
 debug_output/
 vector_store/
+tmp/
 
 *.DS_Store
+
+requirements.old

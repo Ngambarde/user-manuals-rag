@@ -1,8 +1,8 @@
 # --- Build Stage ---
-# his stage is used to install our dependencies. This ensures that
+# This stage is used to install our dependencies. This ensures that
 # build tools like pip, and any system libraries, needed for installation
 # are not included in the final, lean production image.
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 # Installs build-time system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential && rm -rf /var/lib/apt/lists/*
