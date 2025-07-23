@@ -32,7 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgl1-mesa-glx
 WORKDIR /app
 
 # Creating a dedicated, non-root user to run the application.
-RUN addgroup --system appgroup && adduser --system --group --no-create-home appuser
+RUN addgroup --system appgroup && adduser --system --group --home /home/appuser appuser
 
 # This is the benefit of the multi-stage build approach. By copying ONLY the installed
 # virtual environment from the "builder" stage gives all the
