@@ -15,3 +15,8 @@ debug_output/
 # IDE
 .idea/
 .vscode/ 
+
+tmp/
+requirements.old
+/tests/__pycache__/
+/src/__pycache__/
