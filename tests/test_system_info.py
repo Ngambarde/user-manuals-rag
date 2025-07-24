@@ -93,6 +93,7 @@ class TestIntegration:
         query_data = query_response.json()
         assert "answer" in query_data
         assert "source_documents" in query_data
+        assert "retrieved_context" in query_data
 
         # Step 3: System info
         system_response = test_client.get("/system-info")
@@ -108,6 +109,7 @@ class TestIntegration:
         # Query should have valid response
         assert len(query_data["answer"]) > 0
         assert len(query_data["source_documents"]) > 0
+        assert len(query_data["retrieved_context"]) > 0
 
         # System info should have valid configuration
         assert system_data["config"]["project_id"] == "test-project"
