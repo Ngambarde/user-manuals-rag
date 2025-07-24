@@ -60,6 +60,59 @@ class DocumentIngestionPipeline:
             chunk_size=config.chunk_size, chunk_overlap=config.chunk_overlap
         )
 
+        self._validate_gcs_buckets()
+
+    def _validate_gcs_buckets(self):
+        """
+        Validate that required GCS buckets exist and are accessible
+        """
+        try:
+            # Check raw docs bucket
+            raw_bucket = self.storage_client.bucket(self.config.raw_docs_bucket)
+            if not raw_bucket.exists():
+                raise IngestionError(
+                    f"Raw docs bucket does not exist: {self.config.raw_docs_bucket}"
+                )
+
+            # Check vector store bucket
+            vector_bucket = self.storage_client.bucket(self.config.vector_store_bucket)
+            if not vector_bucket.exists():
+                raise IngestionError(
+                    f"Vector store bucket does not exist: "
+                    f"{self.config.vector_store_bucket}"
+                )
+
+            logger.info("GCS buckets validated successfully")
+
+        except Exception as e:
+            logger.error(f"GCS bucket validation failed: {e}")
+            raise IngestionError(f"GCS bucket validation failed: {e}")
+
+    def _log_faiss_details(self, db_path: str):
+        """
+        Log details about the created FAISS index for debugging
+        """
+        try:
+            if os.path.exists(db_path):
+                total_size = 0
+                file_count = 0
+                for root, dirs, files in os.walk(db_path):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        file_size = os.path.getsize(file_path)
+                        total_size += file_size
+                        file_count += 1
+                        logger.debug(f"FAISS file: {file} ({file_size} bytes)")
+
+                logger.info(
+                    f"FAISS index contains {file_count} files, "
+                    f"total size: {total_size} bytes"
+                )
+            else:
+                logger.warning(f"FAISS index directory not found: {db_path}")
+        except Exception as e:
+            logger.warning(f"Could not log FAISS details: {e}")
+
     @contextmanager
     def temporary_directory(self):
         """
@@ -70,8 +123,18 @@ class DocumentIngestionPipeline:
             yield temp_dir
         finally:
             if os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir)
-                logger.info(f"Cleaned up temporary directory: {temp_dir}")
+                try:
+                    shutil.rmtree(temp_dir)
+                    logger.info(f"Cleaned up temporary directory: {temp_dir}")
+                except PermissionError as e:
+                    logger.warning(
+                        f"Could not clean up temporary directory {temp_dir}: {e}"
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Unexpected error cleaning up temporary directory "
+                        f"{temp_dir}: {e}"
+                    )
 
     @retry.Retry(predicate=retry.if_transient_error)
     def download_from_gcs(self, bucket_name: str, local_dir: str) -> List[str]:
@@ -186,7 +249,26 @@ class DocumentIngestionPipeline:
             db_path = os.path.join(local_dir, "faiss_index")
             db.save_local(db_path)
 
+            # Validate that the FAISS index was created successfully
+            if not os.path.exists(db_path):
+                raise IngestionError(
+                    f"FAISS index directory was not created at {db_path}"
+                )
+
+            # Check for required FAISS files
+            required_files = ["index.faiss", "index.pkl"]
+            for filename in required_files:
+                file_path = os.path.join(db_path, filename)
+                if not os.path.exists(file_path):
+                    raise IngestionError(f"Required FAISS file not found: {file_path}")
+                if os.path.getsize(file_path) == 0:
+                    raise IngestionError(f"FAISS file is empty: {file_path}")
+
             logger.info(f"Vector store saved to {db_path}")
+
+            # Log FAISS index details for debugging
+            self._log_faiss_details(db_path)
+
             return db_path
 
         except Exception as e:
@@ -202,8 +284,24 @@ class DocumentIngestionPipeline:
 
         try:
             bucket = self.storage_client.bucket(bucket_name)
-            blob = bucket.blob(blob_name)
-            blob.upload_from_filename(local_path)
+
+            if os.path.isdir(local_path):
+                # Upload FAISS index files individually to match expected structure
+                faiss_files = ["index.faiss", "index.pkl"]
+                for filename in faiss_files:
+                    local_file_path = os.path.join(local_path, filename)
+                    if os.path.exists(local_file_path):
+                        blob_path = f"{blob_name}/{filename}"
+                        blob = bucket.blob(blob_path)
+                        blob.upload_from_filename(local_file_path)
+                        logger.info(
+                            f"Uploaded {filename} to gs://{bucket_name}/{blob_path}"
+                        )
+                    else:
+                        logger.warning(f"FAISS file not found: {local_file_path}")
+            else:
+                blob = bucket.blob(blob_name)
+                blob.upload_from_filename(local_path)
 
             logger.info(f"Successfully uploaded to gs://{bucket_name}/{blob_name}")
 
@@ -242,9 +340,16 @@ class DocumentIngestionPipeline:
                 vector_store_path = self.create_vector_store(chunks, temp_dir)
 
                 # Upload to GCS
-                self.upload_to_gcs(
-                    vector_store_path, self.config.vector_store_bucket, "faiss_index"
-                )
+                try:
+                    self.upload_to_gcs(
+                        vector_store_path,
+                        self.config.vector_store_bucket,
+                        "faiss_index",
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to upload vector store to GCS: {e}")
+                    stats["upload_failed"] = True
+                    stats["upload_error"] = str(e)
 
                 stats["success"] = True
                 stats["processing_time"] = time.time() - start_time
@@ -272,11 +377,12 @@ def run_ingestion():
     if not project_id:
         raise ValueError("GCP_PROJECT_ID environment variable is required")
 
+    environment = os.getenv("ENVIRONMENT", "dev")
     # Create configuration
     config = IngestionConfig(
         project_id=project_id,
-        raw_docs_bucket=f"{project_id}-raw-docs",
-        vector_store_bucket=f"{project_id}-vector-stores",
+        raw_docs_bucket=f"{project_id}-{environment}-raw-docs",
+        vector_store_bucket=f"{project_id}-{environment}-vector-stores",
     )
 
     # Create and run pipeline
@@ -284,7 +390,16 @@ def run_ingestion():
 
     try:
         stats = pipeline.run()
-        logger.info(f"Ingestion completed: {stats}")
+
+        # Check if upload failed but processing succeeded
+        if stats.get("upload_failed"):
+            logger.warning(
+                f"Ingestion completed but upload failed: {stats.get('upload_error')}"
+            )
+            logger.warning("Vector store was created locally but not uploaded to GCS")
+        else:
+            logger.info(f"Ingestion completed successfully: {stats}")
+
         return stats
     except IngestionError as e:
         logger.error(f"Ingestion failed: {e}")

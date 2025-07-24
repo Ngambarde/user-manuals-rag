@@ -1,0 +1,29 @@
+terraform {
+  backend "gcs" {
+    bucket = "PROJECT_ID-terraform-state"
+    
+    prefix = "rag-system/ENVIRONMENT"
+
+    encryption_key = "projects/PROJECT_ID/locations/REGION/keyRings/terraform-keyring/cryptoKeys/terraform-key"
+    
+    enable_bucket_policy_only = true
+  }
+}
+
+# Example for development environment:
+# terraform {
+#   backend "gcs" {
+#     bucket = "my-dev-project-terraform-state"
+#     prefix = "rag-system/dev"
+#     encryption_key = "projects/my-dev-project/locations/us-central1/keyRings/terraform-keyring/cryptoKeys/terraform-key"
+#   }
+# }
+
+# Example for production environment:
+# terraform {
+#   backend "gcs" {
+#     bucket = "my-prod-project-terraform-state"
+#     prefix = "rag-system/prod"
+#     encryption_key = "projects/my-prod-project/locations/us-central1/keyRings/terraform-keyring/cryptoKeys/terraform-key"
+#   }
+# } 

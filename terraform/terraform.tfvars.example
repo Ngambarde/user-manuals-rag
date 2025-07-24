@@ -1,0 +1,51 @@
+# --- Required Variables ---
+gcp_project_id = "your-project-id"
+image_tag      = "latest"
+
+# --- Secret Management ---
+# Leave empty to manage manually, or provide your OpenAI API key
+openai_api_key = ""  # e.g., "sk-your-openai-api-key-here"
+
+# --- Environment Configuration ---
+environment = "dev"  # Options: dev, staging, prod
+
+# --- GCP Region and Zone ---
+gcp_region = "us-central1"
+gcp_zone   = "us-central1-a"
+
+# --- Application Configuration ---
+openai_model        = "gpt-4"
+max_retrieval_docs  = 5
+openai_temperature  = 0.0
+timeout_seconds     = 60
+vector_store_blob   = "faiss_index"
+
+# --- Cloud Run Configuration ---
+min_instances = 0
+max_instances = 10
+
+cpu_request = "1000m"
+cpu_limit   = "2000m"
+
+memory_request = "1Gi"
+memory_limit   = "2Gi"
+
+# --- Production Configuration ---
+# Only needed for production environment
+domain_name = ""  # e.g., "api.yourdomain.com"
+
+# VPC connector for private networking (production only)
+vpc_connector = ""  # e.g., "projects/PROJECT/locations/REGION/connectors/NAME"
+
+# --- Monitoring and Alerting ---
+# List of notification channel names for alerts
+alert_notification_channels = []  # e.g., ["projects/PROJECT/notificationChannels/CHANNEL_ID"]
+
+# --- Resource Labels ---
+resource_labels = {
+  environment = "dev"
+  project     = "rag-system"
+  managed-by  = "terraform"
+  owner       = "your-team"
+  cost-center = "engineering"
+} 
