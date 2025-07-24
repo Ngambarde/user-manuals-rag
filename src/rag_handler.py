@@ -260,8 +260,6 @@ class RAGSystem:
         try:
             prompt = ChatPromptTemplate.from_template(
                 """Answer the following question based only on the provided context.
-                If the context doesn't contain enough information to answer the
-                question, say "I don't have enough information to answer this question."
 
                 <context>
                 {context}
