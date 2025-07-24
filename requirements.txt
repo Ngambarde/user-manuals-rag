@@ -15,3 +15,5 @@ google-cloud-storage
 google-api-core
 PyMuPDF==1.25.1
 langchain-text-splitters==0.3.8
+faiss-cpu
+numpy==1.24.3
