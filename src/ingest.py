@@ -6,6 +6,7 @@ from typing import List, Dict, Any
 from dataclasses import dataclass
 from contextlib import contextmanager
 import tempfile
+from pathlib import Path
 
 from google.cloud import storage
 from google.api_core import retry
@@ -224,6 +225,11 @@ class DocumentIngestionPipeline:
                 elif category in ["Title", "NarrativeText", "ListItem"]:
                     chunks = self.text_splitter.split_documents([element])
                     for chunk in chunks:
+                        original_filename = Path(chunk.metadata.get("source", "")).name
+                        gcs_source_path = (
+                            f"gs://{self.config.raw_docs_bucket}/{original_filename}"
+                        )
+                        chunk.metadata["source"] = gcs_source_path
                         chunk.metadata["content_type"] = "text"
                         chunk.metadata["ingestion_timestamp"] = time.time()
                         all_chunks.append(chunk)
