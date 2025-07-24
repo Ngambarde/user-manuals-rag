@@ -359,6 +359,9 @@ class RAGSystem:
                 answer = response.get("answer", "No answer generated")
                 context_docs = response.get("context", [])
 
+                # This is the text the LLM sees
+                retrieved_context = [doc.page_content for doc in context_docs]
+
                 # Format source documents
                 source_documents = self._format_source_documents(context_docs)
 
@@ -379,6 +382,7 @@ class RAGSystem:
                 return {
                     "answer": answer,
                     "source_documents": source_documents,
+                    "retrieved_context": retrieved_context,
                     "stats": stats,
                 }
 
@@ -391,7 +395,7 @@ class RAGSystem:
             logger.error(f"Unexpected error during RAG processing: {e}")
             raise RAGError(f"Unexpected error: {e}")
         finally:
-            stats["processing_time"] = time.time() - time.time()
+            pass
 
     def health_check(self) -> Dict[str, Any]:
         """

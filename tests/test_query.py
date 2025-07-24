@@ -19,6 +19,7 @@ class TestQueryEndpoint:
         # Verify response structure
         assert "answer" in data
         assert "source_documents" in data
+        assert "retrieved_context" in data
         assert "stats" in data
 
         # Verify answer content
@@ -28,6 +29,10 @@ class TestQueryEndpoint:
         # Verify source documents
         assert isinstance(data["source_documents"], list)
         assert len(data["source_documents"]) > 0
+
+        # Verify retrieved context
+        assert isinstance(data["retrieved_context"], list)
+        assert len(data["retrieved_context"]) > 0
 
         # Verify stats structure
         stats = data["stats"]
@@ -69,6 +74,7 @@ class TestQueryEndpoint:
             data = response.json()
             assert "answer" in data
             assert "source_documents" in data
+            assert "retrieved_context" in data
         else:
             data = response.json()
             if expected_detail:
@@ -168,6 +174,7 @@ class TestQueryPerformance:
         for response in responses:
             assert "answer" in response
             assert "source_documents" in response
+            assert "retrieved_context" in response
 
         # Performance assertion (should complete within reasonable time)
         assert total_time < 10.0  # 10 seconds for 5 queries
@@ -186,3 +193,126 @@ class TestQueryPerformance:
 
         # Should respond within 5 seconds
         assert response_time < 5.0
+
+
+class TestRetrievedContext:
+    """Test cases specifically for the retrieved_context field"""
+
+    def test_retrieved_context_in_response(self, test_client: TestClient):
+        """Test that retrieved_context field is present and properly formatted"""
+        query_data = {"text": "What is the equipment setup process?"}
+        response = test_client.post("/query", json=query_data)
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Verify retrieved_context field exists
+        assert "retrieved_context" in data
+        assert isinstance(data["retrieved_context"], list)
+
+        # Verify it contains the actual document content
+        retrieved_context = data["retrieved_context"]
+        assert len(retrieved_context) > 0
+
+        # Each item should be a string (the actual document content)
+        for context_item in retrieved_context:
+            assert isinstance(context_item, str)
+            assert len(context_item) > 0
+
+    def test_retrieved_context_matches_source_count(self, test_client: TestClient):
+        """Test that retrieved_context count matches source_documents count"""
+        query_data = {"text": "How do I troubleshoot the system?"}
+        response = test_client.post("/query", json=query_data)
+
+        assert response.status_code == 200
+        data = response.json()
+
+        source_documents = data["source_documents"]
+        retrieved_context = data["retrieved_context"]
+
+        assert len(retrieved_context) == len(source_documents)
+
+    def test_retrieved_context_content_quality(self, test_client: TestClient):
+        """Test that retrieved_context contains meaningful content"""
+        query_data = {"text": "What are the safety procedures?"}
+        response = test_client.post("/query", json=query_data)
+
+        assert response.status_code == 200
+        data = response.json()
+
+        retrieved_context = data["retrieved_context"]
+
+        # Verify that the content is not just empty strings or whitespace
+        for context_item in retrieved_context:
+            assert isinstance(context_item, str)
+            assert len(context_item.strip()) > 0
+            # Content should be substantial (not just a few characters)
+            assert len(context_item) > 10
+
+    def test_retrieved_context_with_empty_response(
+        self, mock_rag_system, test_client: TestClient
+    ):
+        """Test retrieved_context when no documents are retrieved"""
+
+        # Configure mock to return empty context
+        mock_rag_system.get_rag_response.return_value = {
+            "answer": "No relevant information found.",
+            "source_documents": [],
+            "retrieved_context": [],
+            "stats": {
+                "query": "test query",
+                "processing_time": 0.1,
+                "documents_retrieved": 0,
+                "success": True,
+                "answer_length": 25,
+                "source_count": 0,
+            },
+        }
+
+        query_data = {"text": "Query with no results"}
+        response = test_client.post("/query", json=query_data)
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Should still have the retrieved_context field, even if empty
+        assert "retrieved_context" in data
+        assert isinstance(data["retrieved_context"], list)
+        assert len(data["retrieved_context"]) == 0
+
+    def test_retrieved_context_structure_consistency(self, test_client: TestClient):
+        """Test that retrieved_context structure
+        is consistent across multiple queries"""
+        queries = [
+            "What is the equipment setup process?",
+            "How do I maintain the equipment?",
+            "What are the technical specifications?",
+        ]
+
+        for query in queries:
+            query_data = {"text": query}
+            response = test_client.post("/query", json=query_data)
+
+            assert response.status_code == 200
+            data = response.json()
+
+            # Verify consistent structure
+            assert "retrieved_context" in data
+            assert isinstance(data["retrieved_context"], list)
+
+            # Verify that source_documents and retrieved_context have matching counts
+            assert len(data["retrieved_context"]) == len(data["source_documents"])
+
+    def test_retrieved_context_in_mock_response(self, test_config: Dict[str, Any]):
+        """Test that the mock response includes retrieved_context"""
+        mock_response = test_config["mock_response"]
+
+        # Verify mock response has the new field
+        assert "retrieved_context" in mock_response
+        assert isinstance(mock_response["retrieved_context"], list)
+        assert len(mock_response["retrieved_context"]) > 0
+
+        # Verify content quality in mock
+        for context_item in mock_response["retrieved_context"]:
+            assert isinstance(context_item, str)
+            assert len(context_item) > 0

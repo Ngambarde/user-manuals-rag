@@ -17,6 +17,7 @@ class QueryRequest(BaseModel):
 class QueryResponse(BaseModel):
     answer: str
     source_documents: List[str]
+    retrieved_context: Optional[List[str]] = None
     stats: Optional[Dict[str, Any]] = None
 
 
@@ -56,10 +57,12 @@ async def handle_query(
 
         # Extract stats if present
         stats = response_data.get("stats", {})
+        retrieved_context = response_data.get("retrieved_context", [])
 
         return QueryResponse(
             answer=response_data["answer"],
             source_documents=response_data["source_documents"],
+            retrieved_context=retrieved_context,
             stats=stats,
         )
 

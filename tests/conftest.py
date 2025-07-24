@@ -76,6 +76,10 @@ def test_config() -> Dict[str, Any]:
                 "Rank 1: test_document.pdf (Page 1, Type: text)",
                 "Rank 2: another_document.pdf (Page 3, Type: table)",
             ],
+            "retrieved_context": [
+                "This is the first retrieved document content that the LLM sees.",
+                "This is the second retrieved document content.",
+            ],
             "stats": {
                 "query": "test query",
                 "processing_time": 0.5,
@@ -148,8 +152,10 @@ def assert_response_structure(response_data: Dict[str, Any]):
     """
     assert "answer" in response_data
     assert "source_documents" in response_data
+    assert "retrieved_context" in response_data
     assert isinstance(response_data["answer"], str)
     assert isinstance(response_data["source_documents"], list)
+    assert isinstance(response_data["retrieved_context"], list)
 
 
 def assert_stats_structure(stats: Dict[str, Any]):

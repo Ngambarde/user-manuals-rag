@@ -36,6 +36,7 @@ class TestLegacyFunctionality:
         class QueryResponse(BaseModel):
             answer: str
             source_documents: List[str]
+            retrieved_context: Optional[List[str]] = None
             stats: Optional[Dict[str, Any]] = None
 
         # Create app with custom error handling
@@ -57,6 +58,7 @@ class TestLegacyFunctionality:
                 return QueryResponse(
                     answer=response_data["answer"],
                     source_documents=response_data["source_documents"],
+                    retrieved_context=response_data.get("retrieved_context", []),
                     stats=response_data.get("stats", {}),
                 )
             except RAGError as e:
